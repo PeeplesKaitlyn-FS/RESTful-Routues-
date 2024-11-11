@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const ContactModel = require('@jworkman-fs/asl').ContactModel;
-const { filterContacts, sortContacts, Pager } = require('@jworkman-fs/asl'); // Import the required functions
+const { filterContacts, sortContacts, Pager } = require('@jworkman-fs/asl'); 
 
 
 router.get('/contacts', (req, res) => {
     try {
-        // Get all contacts
         const contacts = ContactModel.getAll();
 
         // Apply filtering
@@ -21,7 +20,6 @@ router.get('/contacts', (req, res) => {
         res.set("X-Page-Total", pager.total());
         res.set("X-Page-Next", pager.next());
         res.set("X-Page-Prev", pager.prev());
-        // Return results
         res.json(pager.results());
     } catch (e) {
         switch (e.name) {
