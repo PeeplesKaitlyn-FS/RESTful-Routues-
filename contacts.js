@@ -42,17 +42,12 @@ router.get('/contacts', (req, res) => {
 // GET /contacts/:id
 router.get('/contacts/:id', (req, res) => {
     try {
-        // Get contact by ID
         const contact = ContactModel.get(req.params.id);
 
-
-        // Check if contact exists
         if (!contact) {
             throw new Error("Contact not found");
         }
 
-
-        // Return result
         res.json(contact);
     } catch (e) {
         if (e.name === "ContactNotFoundError") {
@@ -87,8 +82,6 @@ router.put('/contacts/:id', (req, res) => {
     try {
         const contact = ContactModel.update(req.params.id, req.body);
 
-
-        // Return result
         res.json(contact);
     } catch (e) {
         if (e.name === "InvalidContactError") {
@@ -104,11 +97,8 @@ router.put('/contacts/:id', (req, res) => {
 // DELETE /contacts/:id
 router.delete('/contacts/:id', (req, res) => {
     try {
-        // Delete contact
         ContactModel.delete(req.params.id);
 
-
-        // Return result
         res.json({ message: 'Contact deleted successfully' });
     } catch (e) {
        const express = require('express');
@@ -207,7 +197,4 @@ router.delete('/contacts/:id', (req, res) => {
                }
            }
        });
-       
-       
-       
        module.exports = router;
