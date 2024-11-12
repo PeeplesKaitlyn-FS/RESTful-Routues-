@@ -1,38 +1,49 @@
 const express = require('express');
 const router = express.Router();
-const ContactModel = require('@jworkman-fs/asl').ContactModel;
-const { filterContacts, sortContacts, Pager } = require('@jworkman-fs/asl');
-
-// Define the getAll method as a static method on the ContactModel object
-ContactModel.prototype.getAll = async function() {
-  try {
-    const contacts = await db.query('SELECT * FROM contacts');
-    return contacts;
-  } catch (error) {
-    throw error;
-  }
-};
+const { Pager, filterContacts, sortContacts } = require('@jworkman-fs/asl');
+const { 
+  ContactNotFoundError, 
+  ContactResourceError, 
+  ApiError, 
+  PagerError, 
+  PagerNoResultsError, 
+  PagerOutOfRangeError, 
+  NoContactsFoundError, 
+  InvalidContactSchemaError 
+} = require('@jworkman-fs/asl');
 
 // Error handler function
 const errorHandler = (error, res) => {
-  // ... error handling code ...
-};
+    if (error instanceof ContactResourceError) {
+      res.status(error.statusCode).json({ message: error.message });
+    } else {
+      switch (error.name) {
+        case ContactNotFoundError.name:
+          res.status(404).json({ message: error.message });
+          break;
+        case ApiError.name:
+          res.status(error.statusCode).json({ message: error.message });
+          break;
+        case PagerError.name:
+        case PagerNoResultsError.name:
+        case PagerOutOfRangeError.name:
+          res.status(500).json({ message: error.message });
+          break;
+        case NoContactsFoundError.name:
+        case InvalidContactSchemaError.name:
+          res.status(400).json({ message: error.message });
+          break;
+        default:
+          res.status(500).json({ message: 'Something went wrong' });
+      }
+    }
+  };
 
 // GET /
 router.get('/', async (req, res) => {
   try {
-    const contacts = await ContactModel.getAll();
-    if (!contacts || contacts.length === 0) {
-      return res.json({
-        "contacts": [],
-        "pagination": {
-          "total": 0,
-          "next": null,
-          "prev": null
-        }
-      });
-    }
-    const filtered = filterContacts(contacts, req.get('X-Filter-By'), req.get('X-Filter-Operator'), req.get('X-Filter-Value'));
+    const contacts = await self.index();
+    const filtered = filterContacts(contacts, req.query.filterBy, req.query.filterOperator, req.query.filterValue);
     const sorted = sortContacts(filtered, req.query.sort, req.query.direction);
     const pager = new Pager(sorted, req.query.page, req.query.size);
 
@@ -49,7 +60,6 @@ router.get('/', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(error);
     errorHandler(error, res);
   }
 });
@@ -57,25 +67,28 @@ router.get('/', async (req, res) => {
 // GET /:id
 router.get('/:id', async (req, res) => {
   try {
-    const contact = await ContactModel.get(req.params.id);
-    if (!contact) {
-      throw new Error("Contact not found");
-    }
-    res.json({
-      "contact": contact
-    });
+    const contact = await self.show(req.params.id);
+    res.json({ "contact": contact });
   } catch (error) {
-    errorHandler(error, res);
+    switch (error.name) {
+      case ContactNotFoundError.name:
+        res.status(404).json({ message: error.message });
+        break;
+      case ContactResourceError.name:
+      case ApiError.name:
+        res.status(error.statusCode).json({ message: error.message });
+        break;
+      default:
+        res.status(500).json({ message: 'Something went wrong' });
+    }
   }
 });
 
 // POST /
 router.post('/', async (req, res) => {
   try {
-    const contact = await ContactModel.create(req.body);
-    res.json({
-      "contact": contact
-    });
+    const contact = await self.create(req.body);
+    res.json({ "contact": contact });
   } catch (error) {
     errorHandler(error, res);
   }
@@ -84,10 +97,8 @@ router.post('/', async (req, res) => {
 // PUT /:id
 router.put('/:id', async (req, res) => {
   try {
-    const contact = await ContactModel.update(req.params.id, req.body);
-    res.json({
-      "contact": contact
-    });
+    const contact = await self.update(req.params.id, req.body);
+    res.json({ "contact": contact });
   } catch (error) {
     errorHandler(error, res);
   }
@@ -96,7 +107,7 @@ router.put('/:id', async (req, res) => {
 // DELETE /:id
 router.delete('/:id', async (req, res) => {
   try {
-    await ContactModel.delete(req.params.id);
+    await self.remove(req.params.id);
     res.json({ message: 'Contact deleted successfully' });
   } catch (error) {
     errorHandler(error, res);
