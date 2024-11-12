@@ -3,49 +3,68 @@ const router = express.Router();
 const ContactModel = require('@jworkman-fs/asl').ContactModel;
 const { filterContacts, sortContacts, Pager } = require('@jworkman-fs/asl');
 
+// Define the getAll method as a static method on the ContactModel object
+ContactModel.prototype.getAll = async function() {
+    try {
+      const contacts = await db.query('SELECT * FROM contacts');
+      return contacts;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+// Error handler function
+const errorHandler = (error, res) => {
+  if (error.name === "InvalidContactError") {
+    res.status(422).json({ message: "Invalid contact data" });
+  } else if (error.name === "ContactNotFoundError") {
+    res.status(404).json({ message: "Contact not found" });
+  } else if (error.name === "PagerOutOfRangeError") {
+    res.status(400).json({ message: "Invalid page or size parameter" });
+  } else if (error.name === "InvalidEnumError") {
+    res.status(400).json({ message: "Invalid sort or direction parameter" });
+  } else if (error.name === "PagerLimitExceededError") {
+    res.status(400).json({ message: "Page size limit exceeded" });
+  } else {
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 // GET /
 router.get('/', async (req, res) => {
-  try {
-    const contacts = await ContactModel.getAll();
-    if (!contacts || contacts.length === 0) {
-      return res.json({
-        "contacts": [],
+    try {
+      const contacts = ContactModel;
+      if (!contacts || contacts.length === 0) {
+        return res.json({
+          "contacts": [],
+          "pagination": {
+            "total": 0,
+            "next": null,
+            "prev": null
+          }
+        });
+      }
+      const filtered = filterContacts(contacts, req.get('X-Filter-By'), req.get('X-Filter-Operator'), req.get('X-Filter-Value'));
+      const sorted = sortContacts(filtered, req.query.sort, req.query.direction);
+      const pager = new Pager(sorted, req.query.page, req.query.size);
+  
+      res.set("X-Page-Total", pager.total());
+      res.set("X-Page-Next", pager.next());
+      res.set("X-Page-Prev", pager.prev());
+  
+      res.json({
+        "contacts": pager.results(),
         "pagination": {
-          "total": 0,
-          "next": null,
-          "prev": null
+          "total": pager.total(),
+          "next": pager.next(),
+          "prev": pager.prev()
         }
       });
+    } catch (error) {
+      console.error(error);
+      errorHandler(error, res);
     }
-    const filtered = filterContacts(contacts, req.get('X-Filter-By'), req.get('X-Filter-Operator'), req.get('X-Filter-Value'));
-    const sorted = sortContacts(filtered, req.query.sort, req.query.direction);
-    const pager = new Pager(sorted, req.query.page, req.query.size);
-
-    res.set("X-Page-Total", pager.total());
-    res.set("X-Page-Next", pager.next());
-    res.set("X-Page-Prev", pager.prev());
-
-    res.json({
-      "contacts": pager.results(),
-      "pagination": {
-        "total": pager.total(),
-        "next": pager.next(),
-        "prev": pager.prev()
-      }
-    });
-  } catch (e) {
-    console.error(e);
-    const errorHandlers = {
-      "InvalidContactError": () => res.status(422).json({ message: "Invalid contact data" }),
-      "ContactNotFoundError": () => res.status(404).json({ message: "Contact not found" }),
-      "PagerOutOfRangeError": () => res.status(400).json({ message: "Invalid page or size parameter" }),
-      "InvalidEnumError": () => res.status(400).json({ message: "Invalid sort or direction parameter" }),
-      "PagerLimitExceededError": () => res.status(400).json({ message: "Page size limit exceeded" }),
-    };
-    const errorHandler = errorHandlers[e.name] || (() => res.status(500).json({ message: "Internal server error" }));
-    errorHandler();
-  }
-});
+  });
 
 // GET /:id
 router.get('/:id', async (req, res) => {
@@ -57,12 +76,8 @@ router.get('/:id', async (req, res) => {
     res.json({
       "contact": contact
     });
-  } catch (e) {
-    if (e.name === "ContactNotFoundError") {
-      res.status(404).json({ message: "Contact not found" });
-    } else {
-      res.status(500).json({ message: "Internal server error" });
-    }
+  } catch (error) {
+    errorHandler(error, res);
   }
 });
 
@@ -73,12 +88,8 @@ router.post('/', async (req, res) => {
     res.json({
       "contact": contact
     });
-  } catch (e) {
-    if (e.name === "InvalidContactError") {
-      res.status(422).json({ message: "Invalid contact data" });
-    } else {
-      res.status(500).json({ message: "Internal server error" });
-    }
+  } catch (error) {
+    errorHandler(error, res);
   }
 });
 
@@ -89,12 +100,8 @@ router.put('/:id', async (req, res) => {
     res.json({
       "contact": contact
     });
-  } catch (e) {
-    if (e.name === "InvalidContactError") {
-      res.status(422).json({ message: "Invalid contact data" });
-    } else {
-      res.status(500).json({ message: "Internal server error" });
-    }
+  } catch (error) {
+    errorHandler(error, res);
   }
 });
 
@@ -103,12 +110,8 @@ router.delete('/:id', async (req, res) => {
   try {
     await ContactModel.delete(req.params.id);
     res.json({ message: 'Contact deleted successfully' });
-  } catch (e) {
-    if (e.name === "ContactNotFoundError") {
-      res.status(404).json({ message: "Contact not found" });
-    } else {
-      res.status(500).json({ message: "Internal server error" });
-    }
+  } catch (error) {
+    errorHandler(error, res);
   }
 });
 
