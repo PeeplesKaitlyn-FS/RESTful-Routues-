@@ -1,16 +1,9 @@
 const express = require('express');
 const app = express();
-const port = 3000;
+const port = 8080;
 const contactRouter = require('./contacts');
 
-router.get('/contacts', (req, res) => {
-    // Handle GET requests to /api/contacts
-    res.json({ message: 'Contacts endpoint' });
-});
-
-module.exports = router;
-
-app.use('/api', contactRouter);
+app.use('/contacts', contactRouter);
 
 app.get('/', (req, res) => {
     res.send('Server is running!');
