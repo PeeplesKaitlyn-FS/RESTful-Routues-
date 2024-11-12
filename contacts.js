@@ -3,11 +3,20 @@ const router = express.Router();
 const ContactModel = require('@jworkman-fs/asl').ContactModel;
 const { filterContacts, sortContacts, Pager } = require('@jworkman-fs/asl');
 
-
-// GET /contacts
-router.get('/contacts', async (req, res) => {
+// GET /
+router.get('/', async (req, res) => {
   try {
     const contacts = await ContactModel.getAll();
+    if (!contacts || contacts.length === 0) {
+      return res.json({
+        "contacts": [],
+        "pagination": {
+          "total": 0,
+          "next": null,
+          "prev": null
+        }
+      });
+    }
     const filtered = filterContacts(contacts, req.get('X-Filter-By'), req.get('X-Filter-Operator'), req.get('X-Filter-Value'));
     const sorted = sortContacts(filtered, req.query.sort, req.query.direction);
     const pager = new Pager(sorted, req.query.page, req.query.size);
@@ -25,6 +34,7 @@ router.get('/contacts', async (req, res) => {
       }
     });
   } catch (e) {
+    console.error(e);
     const errorHandlers = {
       "InvalidContactError": () => res.status(422).json({ message: "Invalid contact data" }),
       "ContactNotFoundError": () => res.status(404).json({ message: "Contact not found" }),
@@ -37,8 +47,8 @@ router.get('/contacts', async (req, res) => {
   }
 });
 
-// GET /contacts/:id
-router.get('/contacts/:id', async (req, res) => {
+// GET /:id
+router.get('/:id', async (req, res) => {
   try {
     const contact = await ContactModel.get(req.params.id);
     if (!contact) {
@@ -56,8 +66,8 @@ router.get('/contacts/:id', async (req, res) => {
   }
 });
 
-// POST /contacts
-router.post('/contacts', async (req, res) => {
+// POST /
+router.post('/', async (req, res) => {
   try {
     const contact = await ContactModel.create(req.body);
     res.json({
@@ -72,8 +82,8 @@ router.post('/contacts', async (req, res) => {
   }
 });
 
-// PUT /contacts/:id
-router.put('/contacts/:id', async (req, res) => {
+// PUT /:id
+router.put('/:id', async (req, res) => {
   try {
     const contact = await ContactModel.update(req.params.id, req.body);
     res.json({
@@ -88,8 +98,8 @@ router.put('/contacts/:id', async (req, res) => {
   }
 });
 
-// DELETE /contacts/:id
-router.delete('/contacts/:id', async (req, res) => {
+// DELETE /:id
+router.delete('/:id', async (req, res) => {
   try {
     await ContactModel.delete(req.params.id);
     res.json({ message: 'Contact deleted successfully' });
