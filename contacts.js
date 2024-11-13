@@ -44,17 +44,13 @@ const errorHandler = (error, res) => {
 // GET /
 router.get('/', async (req, res) => {
     try {
-      if (Array.isArray(req.query.filterBy)) {
-        return res.status(400).json({ message: 'filterBy must be a single string value' });
-      }
       if (typeof req.query.filterBy !== 'string') {
-        throw new ApiError(400, 'filterBy must be a string value');
+        return res.status(400).json({ message: 'filterBy must be a string' });
       }
       const contacts = await self.index();
       const filtered = filterContacts(contacts, req.query.filterBy, req.query.filterOperator, req.query.filterValue);
       const sorted = sortContacts(filtered, req.query.sort, req.query.direction);
       const pager = new Pager(sorted, req.query.page, req.query.size);
-
 
     res.set("X-Page-Total", pager.total());
     res.set("X-Page-Next", pager.next());
