@@ -1,55 +1,65 @@
 const express = require('express');
 const router = express.Router();
-const { Pager, filterContacts, sortContacts } = require('@jworkman-fs/asl');
-const { 
-  ContactNotFoundError, 
-  ContactResourceError, 
-  ApiError, 
-  PagerError, 
-  PagerNoResultsError, 
-  PagerOutOfRangeError, 
-  NoContactsFoundError, 
-  InvalidContactSchemaError 
-} = require('@jworkman-fs/asl');
+const self = require('./contactModel');
+const { Pager, filterContacts, sortContacts } = require('./helper');
+const {
+  ContactResourceError,
+  ContactNotFoundError,
+  ApiError,
+  PagerError,
+  PagerNoResultsError,
+  PagerOutOfRangeError,
+  NoContactsFoundError,
+  InvalidContactSchemaError,
+} = require('./errors');
 
 // Error handler function
 const errorHandler = (error, res) => {
-    if (error instanceof ContactResourceError) {
-      res.status(error.statusCode).json({ message: error.message });
-    } else {
-      switch (error.name) {
-        case ContactNotFoundError.name:
-          res.status(404).json({ message: error.message });
-          break;
-        case ApiError.name:
-          res.status(error.statusCode).json({ message: error.message });
-          break;
-        case PagerError.name:
-        case PagerNoResultsError.name:
-        case PagerOutOfRangeError.name:
-          res.status(500).json({ message: error.message });
-          break;
-        case NoContactsFoundError.name:
-        case InvalidContactSchemaError.name:
-          res.status(400).json({ message: error.message });
-          break;
-        default:
-          res.status(500).json({ message: 'Something went wrong' });
-      }
+  if (error instanceof ContactResourceError) {
+    res.status(error.statusCode).json({ message: error.message });
+  } else {
+    switch (error.name) {
+      case ContactNotFoundError.name:
+        res.status(404).json({ message: error.message });
+        break;
+      case ApiError.name:
+        res.status(error.statusCode).json({ message: error.message });
+        break;
+      case PagerError.name:
+      case PagerNoResultsError.name:
+      case PagerOutOfRangeError.name:
+        res.status(500).json({ message: error.message });
+        break;
+      case NoContactsFoundError.name:
+      case InvalidContactSchemaError.name:
+        res.status(400).json({ message: error.message });
+        break;
+      default:
+        res.status(500).json({ message: 'Something went wrong' });
     }
-  };
+  }
+};
+
 
 // GET /
 router.get('/', async (req, res) => {
-  try {
-    const contacts = await self.index();
-    const filtered = filterContacts(contacts, req.query.filterBy, req.query.filterOperator, req.query.filterValue);
-    const sorted = sortContacts(filtered, req.query.sort, req.query.direction);
-    const pager = new Pager(sorted, req.query.page, req.query.size);
+    try {
+      if (Array.isArray(req.query.filterBy)) {
+        return res.status(400).json({ message: 'filterBy must be a single string value' });
+      }
+      if (typeof req.query.filterBy !== 'string') {
+        throw new ApiError(400, 'filterBy must be a string value');
+      }
+      const contacts = await self.index();
+      const filtered = filterContacts(contacts, req.query.filterBy, req.query.filterOperator, req.query.filterValue);
+      const sorted = sortContacts(filtered, req.query.sort, req.query.direction);
+      const pager = new Pager(sorted, req.query.page, req.query.size);
+
 
     res.set("X-Page-Total", pager.total());
     res.set("X-Page-Next", pager.next());
     res.set("X-Page-Prev", pager.prev());
+
 
     res.json({
       "contacts": pager.results(),
@@ -64,25 +74,17 @@ router.get('/', async (req, res) => {
   }
 });
 
+
 // GET /:id
 router.get('/:id', async (req, res) => {
   try {
     const contact = await self.show(req.params.id);
     res.json({ "contact": contact });
   } catch (error) {
-    switch (error.name) {
-      case ContactNotFoundError.name:
-        res.status(404).json({ message: error.message });
-        break;
-      case ContactResourceError.name:
-      case ApiError.name:
-        res.status(error.statusCode).json({ message: error.message });
-        break;
-      default:
-        res.status(500).json({ message: 'Something went wrong' });
-    }
+    errorHandler(error, res);
   }
 });
+
 
 // POST /
 router.post('/', async (req, res) => {
@@ -94,6 +96,7 @@ router.post('/', async (req, res) => {
   }
 });
 
+
 // PUT /:id
 router.put('/:id', async (req, res) => {
   try {
@@ -104,6 +107,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+
 // DELETE /:id
 router.delete('/:id', async (req, res) => {
   try {
@@ -113,5 +117,6 @@ router.delete('/:id', async (req, res) => {
     errorHandler(error, res);
   }
 });
+
 
 module.exports = router;
