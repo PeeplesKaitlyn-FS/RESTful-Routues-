@@ -10,7 +10,6 @@
   "description": "",
   "dependencies": {
     "@jworkman-fs/asl": "^1.2.43",
-    "jest": "^29.7.0",
-    //"@jworkman-fs/wdv-cli": "github:jworkman-fs/wdv-cli"
+    "jest": "^29.7.0"
   }
 }
