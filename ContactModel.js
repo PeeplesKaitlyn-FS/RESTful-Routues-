@@ -7,9 +7,11 @@ class ContactModel {
   }
 
 
+
   async index() {
     return this.contacts;
   }
+
 
 
   async show(id) {
@@ -21,21 +23,28 @@ class ContactModel {
   }
 
 
+
   async create(contact) {
-    const newContact = { id: this.contacts.length + 1, ...contact };
+    const existingContact = this.contacts.find((c) => c.id === contact.id);
+    if (existingContact) {
+      throw new Error(`Contact with ID ${contact.id} already exists`);
+    }
+    const newContact = { ...contact };
     this.contacts.push(newContact);
     return newContact;
   }
 
 
+
   async update(id, contact) {
-    const index = this.contacts.findIndex((contact) => contact.id === parseInt(id));
+    const index = this.contacts.findIndex((c) => c.id === parseInt(id));
     if (index === -1) {
       throw new ContactNotFoundError(`Contact not found with id ${id}`);
     }
     this.contacts[index] = { ...this.contacts[index], ...contact };
     return this.contacts[index];
   }
+
 
 
   async remove(id) {
@@ -48,12 +57,14 @@ class ContactModel {
 }
 
 
+
 class ContactNotFoundError extends Error {
   constructor(message) {
     super(message);
     this.name = 'ContactNotFoundError';
   }
 }
+
 
 
 module.exports = new ContactModel();
