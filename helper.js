@@ -2,26 +2,30 @@ function filterContacts(contacts, filterBy, filterOperator, filterValue) {
   console.log(`filterBy: ${filterBy}, filterValue: ${filterValue}`);
   console.log(`validFields: ${validFields}`);
 
+
+  if (!contacts || contacts.length === 0) {
+    throw new Error('No contacts to filter');
+  }
+
+
   if (!filterBy || !filterOperator || !filterValue) {
     throw new Error('Missing filter criteria');
   }
+
 
   if (typeof filterBy !== 'string') {
     throw new Error('filterBy must be a string');
   }
 
+
   const validFields = ['id', 'fname', 'lname', 'phone', 'birthday', 'email'];
+
 
   if (!validFields.includes(filterBy)) {
     console.log(`filterBy: ${filterBy}, validFields: ${validFields}`);
     throw new Error(`Invalid filter field: ${filterBy}`);
   }
 
-}
-
-  if (!contacts || contacts.length === 0) {
-    throw new Error('No contacts to filter');
-  }
 
   try {
     const filteredContacts = contacts.filter((contact) => {
@@ -40,9 +44,11 @@ function filterContacts(contacts, filterBy, filterOperator, filterValue) {
       }
     });
 
+
     if (filteredContacts.length === 0) {
       throw new Error(`No contacts match the filter criteria`);
     }
+
 
     return filteredContacts;
   } catch (error) {
