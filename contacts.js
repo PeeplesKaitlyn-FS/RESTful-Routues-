@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const self = require('./contactModel');
 const { Pager, filterContacts, sortContacts } = require('./helper');
+console.log(typeof filterContacts);
 const {
   ContactResourceError,
   ContactNotFoundError,
@@ -12,7 +13,6 @@ const {
   NoContactsFoundError,
   InvalidContactSchemaError,
 } = require('./errors');
-
 
 // Error handler function
 const errorHandler = (error, res) => {
@@ -43,8 +43,6 @@ const errorHandler = (error, res) => {
     }
   }
 };
-
-
 
 // GET /
 router.get('/', async (req, res) => {
@@ -89,7 +87,6 @@ router.get('/', async (req, res) => {
     res.set("X-Page-Total", pager.total());
     res.set("X-Page-Next", pager.next());
     res.set("X-Page-Prev", pager.prev());
-
     res.json({
       "contacts": pager.results(),
       "pagination": {
@@ -104,8 +101,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-
-
 // GET /:id
 router.get('/:id', async (req, res) => {
   try {
@@ -115,8 +110,6 @@ router.get('/:id', async (req, res) => {
     errorHandler(error, res);
   }
 });
-
-
 
 // POST /
 router.post('/', async (req, res) => {
@@ -128,8 +121,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-
-
 // PUT /:id
 router.put('/:id', async (req, res) => {
   try {
@@ -140,8 +131,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-
-
 // DELETE /:id
 router.delete('/:id', async (req, res) => {
   try {
@@ -151,7 +140,5 @@ router.delete('/:id', async (req, res) => {
     errorHandler(error, res);
   }
 });
-
-
 
 module.exports = router;
