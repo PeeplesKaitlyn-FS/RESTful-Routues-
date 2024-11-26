@@ -65,5 +65,5 @@ module.exports = {
   PagerNoResultsError,
   PagerOutOfRangeError,
   NoContactsFoundError,
-  InvalidContactSchemaError,
+  InvalidContactSchemaError
 };
