@@ -90,12 +90,16 @@ function filterContacts(contacts, filterBy, filterOperator, filterValue) {
       const contactValue = contact[filterBy];
       switch (filterOperator) {
         case 'eq':
+        case '=':
           return contactValue === parsedFilterValue;
         case 'neq':
+        case '!=':
           return contactValue !== parsedFilterValue;
         case 'lt':
+        case '<':
           return contactValue < parsedFilterValue;
         case 'gt':
+        case '>':
           return contactValue > parsedFilterValue;
         default:
           throw new InvalidContactSchemaError(`Invalid filter operator: ${filterOperator}`);

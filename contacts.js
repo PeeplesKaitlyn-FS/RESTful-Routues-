@@ -48,18 +48,24 @@ const errorHandler = (error, res) => {
 router.get('/', async (req, res) => {
   try {
     console.log('Request Query:', req.query);
-    if (typeof req.query.filterBy !== 'string') {
-      console.log('filterBy is not a string');
-      return res.status(400).json({ message: 'filterBy must be a string' });
+    const allowedFilterByValues = ['id', 'name', 'email'];
+    const allowedFilterOperators = ['=', '!=', '>', '<', '>=', '<='];
+
+    if (!req.query.filterBy || typeof req.query.filterBy !== 'string' || !allowedFilterByValues.includes(req.query.filterBy)) {
+      console.log('filterBy is not a valid string');
+      return res.status(400).json({ message: 'filterBy must be a valid string (id, name, email)' });
     }
-    if (!req.query.filterOperator) {
-      console.log('filterOperator is not provided');
-      return res.status(400).json({ message: 'filterOperator is required' });
+
+    if (!req.query.filterOperator || typeof req.query.filterOperator !== 'string' || !allowedFilterOperators.includes(req.query.filterOperator)) {
+      console.log('filterOperator is not a valid string');
+      return res.status(400).json({ message: 'filterOperator must be a valid string (=, !=, >, <, >=, <=)' });
     }
+
     if (!req.query.filterValue) {
       console.log('filterValue is not provided');
       return res.status(400).json({ message: 'filterValue is required' });
     }
+
     const contacts = await self.index();
     console.log('Contacts:', contacts);
     if (!contacts) {
