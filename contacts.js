@@ -127,26 +127,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /:id
-router.get('/:id', async (req, res) => {
-  try {
-    const contact = await self.show(req.params.id);
-    res.json({ "contact": contact });
-  } catch (error) {
-    errorHandler(error, res);
-  }
-});
-
-// POST /
-router.post('/', async (req, res) => {
-  try {
-    const contact = await self.create(req.body);
-    res.json({ "contact": contact });
-  } catch (error) {
-    errorHandler(error, res);
-  }
-});
-
 // PUT /:id
 router.put('/:id', async (req, res) => {
   try {
