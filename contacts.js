@@ -16,7 +16,8 @@ const {
 
 // Error handler function
 const errorHandler = (error, res) => {
-  console.error('Error occurred:', error.stack);
+  console.error('Error occurred:', error.message);
+  console.error('Error stack:', error.stack);
   if (error instanceof ContactResourceError) {
     res.status(error.statusCode).json({ message: error.message });
   } else {
@@ -61,9 +62,9 @@ router.get('/', async (req, res) => {
       return res.status(400).json({ message: 'filterOperator must be a valid string (=, !=, >, <, >=, <=)' });
     }
 
-    if (!req.query.filterValue) {
-      console.log('filterValue is not provided');
-      return res.status(400).json({ message: 'filterValue is required' });
+    if (!req.query.filterValue || typeof req.query.filterValue !== 'string') {
+      console.log('filterValue is not provided or not a string');
+      return res.status(400).json({ message: 'filterValue is required and must be a string' });
     }
 
     const contacts = await self.index();
@@ -102,8 +103,27 @@ router.get('/', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error occurred:', error.stack);
-    res.status(500).json({ message: 'Something went wrong', error: error.message, stack: error.stack });
+    errorHandler(error, res);
+  }
+});
+
+// GET /:id
+router.get('/:id', async (req, res) => {
+  try {
+    const contact = await self.show(req.params.id);
+    res.json({ "contact": contact });
+  } catch (error) {
+    errorHandler(error, res);
+  }
+});
+
+// POST /
+router.post('/', async (req, res) => {
+  try {
+    const contact = await self.create(req.body);
+    res.json({ "contact": contact });
+  } catch (error) {
+    errorHandler(error, res);
   }
 });
 
